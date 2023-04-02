@@ -13,7 +13,8 @@
 (defvar janet-netrepl-data nil)
 
 (defun janet-netrepl-filter (p out)
-  (let* ((data (bindat-unpack janet-netrepl-bindat-spec out))
+  (let* ((data (bindat-unpack janet-netrepl-bindat-spec
+                              (string-make-unibyte out)))
          (res (bindat-get-field data 'data)))
     (setq janet-netrepl-data res)))
 
@@ -22,7 +23,8 @@
 
 (defun janet-netrepl-open ()
   (let ((p (open-network-stream janet-netrepl-name nil janet-netrepl-host janet-netrepl-port)))
-    (set-process-filter-multibyte p nil)
+    ;; XXX: obsolete for a while, removed in emacs 29?
+    ;; (set-process-filter-multibyte p nil)
     ;; (set-process-coding-system p 'utf-8 'utf-8)
     (set-process-filter p #'janet-netrepl-filter)
     (set-process-sentinel p #'janet-netrepl-sentinel)
@@ -42,7 +44,7 @@
     janet-netrepl-stream))
 
 (defun janet-netrepl-send (p prefix s)
-  (let* ((msg (if prefix (format "%c%s" prefix s) s))
+  (let* ((msg (string-make-unibyte (if prefix (format "%c%s" prefix s) s)))
          (packed (bindat-pack janet-netrepl-bindat-spec `((length . ,(length msg)) (data . ,msg)))))
     (process-send-string p packed)))
 
